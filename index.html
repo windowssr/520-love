@@ -538,20 +538,8 @@
       padding: 12px 20px;
     }
 
-    .polaroid-tape {
-      position: absolute;
-      top: 8px;
-      left: 50%;
-      transform: translateX(-50%) rotate(-2deg);
-      width: 72px;
-      height: 22px;
-      background: rgba(255, 250, 220, 0.75);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      z-index: 5;
-      opacity: 0.9;
-    }
-
     .polaroid-inner {
+      position: relative;
       background: #fffef9;
       padding: 12px 12px 20px;
       border-radius: 4px;
@@ -571,6 +559,20 @@
     @keyframes polaroidPop {
       0% { transform: rotate(-0.5deg) scale(0.92); opacity: 0.7; }
       100% { transform: rotate(-0.5deg) scale(1); opacity: 1; }
+    }
+
+    .polaroid-tape {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 64px;
+      height: 18px;
+      background: linear-gradient(180deg, rgba(255, 252, 235, 0.95), rgba(245, 235, 200, 0.85));
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      z-index: 6;
+      opacity: 0.92;
+      border-radius: 1px;
     }
 
     .memory-intro {
@@ -694,6 +696,8 @@
     }
 
     .memory-caption {
+      position: relative;
+      z-index: 8;
       flex-shrink: 0;
       width: 100%;
       padding: 14px 20px max(18px, env(safe-area-inset-bottom));
@@ -705,7 +709,8 @@
       transition: opacity 0.4s ease 0.12s, transform 0.4s ease 0.12s;
     }
 
-    .memory-photo-wrap.show + .memory-caption {
+    .memory-stage:has(#memoryWrap.show) .memory-caption,
+    .memory-caption.visible {
       opacity: 1;
       transform: translateY(0);
     }
@@ -720,12 +725,8 @@
     .memory-title {
       font-family: "ZCOOL KuaiLe", cursive;
       font-size: 1.3rem;
-      background: linear-gradient(90deg, #fff, #ffb3c6, #fff);
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shine 5s linear infinite;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
       line-height: 1.5;
       margin-bottom: 6px;
     }
@@ -776,9 +777,40 @@
       box-shadow: 0 0 10px rgba(255, 107, 157, 0.9);
     }
 
+    #screen-celebrate {
+      position: relative;
+      max-width: 100%;
+      min-height: 100%;
+      justify-content: flex-end;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    #hero-heart-canvas {
+      position: fixed;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      width: min(100vw, 420px);
+      height: min(72vw, 380px);
+      z-index: 4;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    #hero-heart-canvas.active {
+      opacity: 1;
+    }
+
+    #screen-celebrate .celebration {
+      position: relative;
+      z-index: 5;
+      margin-top: min(42vh, 320px);
+      padding: 0 20px;
+    }
+
     #screen-celebrate .big-heart {
-      font-size: 5rem;
-      filter: drop-shadow(0 0 30px rgba(255, 107, 157, 0.8));
+      display: none;
     }
 
     #screen-celebrate .date-line {
@@ -841,8 +873,8 @@
       </div>
       <div class="memory-stage">
         <div class="polaroid">
-          <div class="polaroid-tape"></div>
           <div class="polaroid-inner" id="polaroidInner">
+            <div class="polaroid-tape" aria-hidden="true"></div>
             <div class="memory-photo-wrap" id="memoryWrap">
               <div class="memory-flash" id="memoryFlash"></div>
               <div class="memory-loading" id="memoryLoading">
@@ -853,7 +885,7 @@
             </div>
           </div>
         </div>
-        <div class="memory-caption">
+        <div class="memory-caption" id="memoryCaption">
           <p class="memory-index" id="memoryIndex"></p>
           <p class="memory-title" id="memoryTitle"></p>
           <p class="memory-hint" id="memoryHint">轻触继续，重温这一刻 ♡</p>
@@ -879,6 +911,7 @@
 
     <!-- 成功 -->
     <section class="screen" id="screen-celebrate">
+      <canvas id="hero-heart-canvas" aria-hidden="true"></canvas>
       <div class="celebration show">
         <div class="big-heart">💖</div>
         <h1 class="title-shine">谢谢你，我的宝贝</h1>
@@ -1171,6 +1204,7 @@
     async function showMemory(index, withFlash = true) {
       const m = MEMORIES[index];
       const wrap = $("memoryWrap");
+      const caption = $("memoryCaption");
       const img = $("memoryImg");
       const flash = $("memoryFlash");
 
@@ -1180,15 +1214,18 @@
 
       if (withFlash) {
         wrap.classList.remove("show");
+        caption.classList.remove("visible");
         wrap.classList.add("flash");
         flash.classList.remove("burst");
         void flash.offsetWidth;
         flash.classList.add("burst");
       } else {
         wrap.classList.remove("show");
+        caption.classList.remove("visible");
       }
 
       wrap.classList.add("loading");
+      caption.classList.remove("visible");
 
       try {
         await loadImage(m.img);
@@ -1197,6 +1234,7 @@
         }
         wrap.classList.remove("loading", "flash");
         wrap.classList.add("show");
+        caption.classList.add("visible");
         const polaroid = $("polaroidInner");
         polaroid.classList.remove("show-pop");
         void polaroid.offsetWidth;
@@ -1205,6 +1243,7 @@
         wrap.classList.remove("loading", "flash");
         img.src = m.img;
         wrap.classList.add("show");
+        caption.classList.add("visible");
       }
 
       $("memoryHint").textContent =
@@ -1271,10 +1310,145 @@
       btnNo.textContent = ["真的不再想想？", "我会对你很好的", "点错了吧？😊", "就点愿意嘛"][Math.floor(Math.random() * 4)];
     });
 
+    // 立体粒子爱心（庆祝页中央）
+    const heroCanvas = $("hero-heart-canvas");
+    const hctx = heroCanvas.getContext("2d");
+    const heartParticles = [];
+    let heroAnimId = null;
+    let heroStartTime = 0;
+    const HERO_COUNT = 900;
+
+    function buildHeartParticles() {
+      heartParticles.length = 0;
+      for (let i = 0; i < HERO_COUNT; i++) {
+        const t = Math.random() * Math.PI * 2;
+        const layer = 0.75 + Math.random() * 0.35;
+        const hx = layer * 16 * Math.pow(Math.sin(t), 3);
+        const hy = layer * -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        const hz = (Math.random() - 0.5) * 14 * layer;
+        heartParticles.push({
+          bx: hx,
+          by: hy,
+          bz: hz,
+          size: 1.2 + Math.random() * 2.2,
+          hue: 330 + Math.random() * 40
+        });
+      }
+    }
+
+    function resizeHeroCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = heroCanvas.getBoundingClientRect();
+      heroCanvas.width = rect.width * dpr;
+      heroCanvas.height = rect.height * dpr;
+      hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function project3D(x, y, z, cx, cy, scale, rotY, rotX) {
+      let cos = Math.cos(rotY);
+      let sin = Math.sin(rotY);
+      let x1 = x * cos - z * sin;
+      let z1 = x * sin + z * cos;
+      cos = Math.cos(rotX);
+      sin = Math.sin(rotX);
+      const y1 = y * cos - z1 * sin;
+      z1 = y * sin + z1 * cos;
+      const persp = 28 / (28 + z1);
+      return {
+        x: cx + x1 * scale * persp,
+        y: cy + y1 * scale * persp,
+        z: z1,
+        persp
+      };
+    }
+
+    function drawHeroHeart(now) {
+      if (!heroStartTime) heroStartTime = now;
+      const elapsed = (now - heroStartTime) / 1000;
+      const w = heroCanvas.getBoundingClientRect().width;
+      const h = heroCanvas.getBoundingClientRect().height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      const enter = Math.min(1, elapsed / 1.2);
+      const ease = 1 - Math.pow(1 - enter, 3);
+      const pulse = 1 + 0.07 * Math.sin(elapsed * 2.8);
+      const baseScale = (Math.min(w, h) / 42) * ease * pulse;
+      const rotY = elapsed * 0.9;
+      const rotX = 0.35 + Math.sin(elapsed * 1.1) * 0.12;
+
+      hctx.clearRect(0, 0, w, h);
+
+      const projected = heartParticles.map((p) => {
+        const pt = project3D(p.bx, p.by, p.bz, cx, cy, baseScale, rotY, rotX);
+        return { ...p, ...pt };
+      });
+      projected.sort((a, b) => a.z - b.z);
+
+      projected.forEach((p) => {
+        const alpha = 0.35 + p.persp * 0.65;
+        const r = p.size * (0.6 + p.persp * 0.9);
+        const grad = hctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 2.5);
+        grad.addColorStop(0, `hsla(${p.hue}, 95%, 72%, ${alpha})`);
+        grad.addColorStop(0.5, `hsla(${p.hue}, 90%, 55%, ${alpha * 0.85})`);
+        grad.addColorStop(1, `hsla(${p.hue}, 85%, 45%, 0)`);
+        hctx.beginPath();
+        hctx.fillStyle = grad;
+        hctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        hctx.fill();
+      });
+
+      hctx.save();
+      hctx.globalCompositeOperation = "lighter";
+      hctx.strokeStyle = `rgba(255, 182, 193, ${0.25 + 0.15 * Math.sin(elapsed * 3)})`;
+      hctx.lineWidth = 2;
+      hctx.shadowBlur = 20;
+      hctx.shadowColor = "#ff6b9d";
+      const outline = [];
+      for (let t = 0; t <= Math.PI * 2; t += 0.08) {
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        outline.push(project3D(hx, hy, 0, cx, cy, baseScale * 1.02, rotY, rotX));
+      }
+      hctx.beginPath();
+      outline.forEach((pt, i) => {
+        if (i === 0) hctx.moveTo(pt.x, pt.y);
+        else hctx.lineTo(pt.x, pt.y);
+      });
+      hctx.closePath();
+      hctx.stroke();
+      hctx.restore();
+
+      heroAnimId = requestAnimationFrame(drawHeroHeart);
+    }
+
+    function startHeroHeart() {
+      buildHeartParticles();
+      resizeHeroCanvas();
+      heroStartTime = 0;
+      heroCanvas.classList.add("active");
+      if (heroAnimId) cancelAnimationFrame(heroAnimId);
+      heroAnimId = requestAnimationFrame(drawHeroHeart);
+    }
+
+    function stopHeroHeart() {
+      heroCanvas.classList.remove("active");
+      if (heroAnimId) {
+        cancelAnimationFrame(heroAnimId);
+        heroAnimId = null;
+      }
+      hctx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+    }
+
+    window.addEventListener("resize", () => {
+      if (heroCanvas.classList.contains("active")) resizeHeroCanvas();
+    });
+
     $("btnYes").addEventListener("click", () => {
       burstConfetti(160);
       for (let i = 0; i < 50; i++) setTimeout(spawnHeart, i * 35);
       showScreen("screen-celebrate");
+      startHeroHeart();
       const d = new Date();
       $("dateLine").textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 · 我们的 520`;
     });
