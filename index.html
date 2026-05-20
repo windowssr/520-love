@@ -17,31 +17,100 @@
       --pink: #ff6b9d;
       --rose: #ff8fab;
       --deep: #c9184a;
+      --violet: #9d4edd;
+      --gold: #ffd6a5;
       --cream: #fff5f7;
       --text: #4a1942;
-      --shadow: rgba(201, 24, 74, 0.25);
+      --shadow: rgba(201, 24, 74, 0.28);
+      --glass: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.85);
     }
 
     html, body {
       height: 100%;
       overflow: hidden;
       font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
-      background: linear-gradient(160deg, #ffeef3 0%, #ffd6e0 40%, #ffb3c6 100%);
       color: var(--text);
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
 
-    #hearts-canvas {
+    body {
+      background: #1a0a14;
+    }
+
+    body[data-scene="memories"] { background: #120810; }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: linear-gradient(145deg, #1a0a14 0%, #3d1230 35%, #ff6b9d 70%, #ffd6e0 100%);
+      background-size: 200% 200%;
+      animation: auroraShift 14s ease infinite;
+    }
+
+    @keyframes auroraShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.55;
+      animation: orbFloat 10s ease-in-out infinite;
+    }
+
+    .orb-a {
+      width: 55vw; height: 55vw; max-width: 320px; max-height: 320px;
+      background: #ff6b9d;
+      top: -10%; left: -15%;
+    }
+
+    .orb-b {
+      width: 45vw; height: 45vw; max-width: 280px; max-height: 280px;
+      background: #9d4edd;
+      bottom: 10%; right: -10%;
+      animation-delay: -3s;
+    }
+
+    .orb-c {
+      width: 35vw; height: 35vw; max-width: 200px; max-height: 200px;
+      background: #ffd6a5;
+      top: 40%; left: 30%;
+      animation-delay: -6s;
+      opacity: 0.35;
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(12px, -18px) scale(1.05); }
+      66% { transform: translate(-10px, 12px) scale(0.95); }
+    }
+
+    .bg-grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    #hearts-canvas, #confetti-canvas {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 0;
+      z-index: 1;
     }
+
+    #confetti-canvas { z-index: 20; }
 
     .app {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       height: 100%;
       display: flex;
       flex-direction: column;
@@ -58,14 +127,89 @@
       justify-content: center;
       width: 100%;
       max-width: 400px;
-      animation: fadeUp 0.6s ease both;
+      opacity: 0;
+      transform: scale(0.94) translateY(20px);
+      filter: blur(6px);
+      transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                  filter 0.55s ease;
     }
 
-    .screen.active { display: flex; }
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(24px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    .title-shine {
+      background: linear-gradient(120deg, #fff 0%, #ffb3c6 40%, #fff 60%, #ff8fab 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite;
+      filter: drop-shadow(0 2px 12px rgba(255, 107, 157, 0.4));
+    }
+
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+
+    .badge-glow {
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(8px);
+      color: #fff !important;
+      opacity: 1 !important;
+      letter-spacing: 0.35em;
+      box-shadow: 0 0 20px rgba(255, 107, 157, 0.35);
+    }
+
+    .heart-orb {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .heart-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 182, 193, 0.5);
+      animation: ringPulse 2.5s ease-out infinite;
+    }
+
+    .heart-ring::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 107, 157, 0.25);
+      animation: ringPulse 2.5s ease-out infinite 0.4s;
+    }
+
+    @keyframes ringPulse {
+      0% { transform: scale(0.85); opacity: 0.9; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    #screen-welcome .subtitle,
+    #screen-welcome h1.title-shine { color: #fff; }
+    #screen-welcome .subtitle {
+      color: rgba(255, 255, 255, 0.88);
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
     }
 
     @keyframes pulse {
@@ -104,6 +248,13 @@
       margin-bottom: 12px;
     }
 
+    #screen-messages h1,
+    #screen-ask h1,
+    #screen-celebrate h1 { color: #fff; text-shadow: 0 2px 16px rgba(255, 107, 157, 0.5); }
+    #screen-messages .subtitle,
+    #screen-ask .subtitle,
+    #screen-celebrate .subtitle { color: rgba(255, 255, 255, 0.9); }
+
     .subtitle {
       font-size: 1rem;
       line-height: 1.8;
@@ -114,20 +265,45 @@
     }
 
     .message-card {
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 20px;
-      padding: 28px 24px;
-      box-shadow: 0 12px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+      position: relative;
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 32px 26px;
       margin-bottom: 28px;
       width: 100%;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 16px 48px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      overflow: hidden;
+    }
+
+    .message-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--pink), var(--violet), var(--gold), var(--pink));
+      background-size: 200% 100%;
+      animation: shine 3s linear infinite;
     }
 
     .message-card p {
-      font-size: 1.05rem;
+      font-size: 1.08rem;
       line-height: 2;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      min-height: 4em;
+    }
+
+    .message-card p.typing::after {
+      content: "｜";
+      animation: blink 0.8s step-end infinite;
+      color: var(--deep);
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
     }
 
     .progress-dots {
@@ -145,11 +321,13 @@
     }
 
     .progress-dots span.on {
-      background: var(--deep);
-      transform: scale(1.25);
+      background: linear-gradient(135deg, var(--pink), var(--violet));
+      transform: scale(1.35);
+      box-shadow: 0 0 12px rgba(255, 107, 157, 0.8);
     }
 
     .btn {
+      position: relative;
       appearance: none;
       border: none;
       cursor: pointer;
@@ -157,17 +335,41 @@
       font-size: 1.1rem;
       padding: 16px 40px;
       border-radius: 999px;
-      background: linear-gradient(135deg, var(--pink), var(--deep));
+      background: linear-gradient(135deg, var(--pink) 0%, var(--violet) 50%, var(--deep) 100%);
+      background-size: 200% 200%;
+      animation: btnGlow 4s ease infinite;
       color: #fff;
-      box-shadow: 0 8px 24px var(--shadow);
+      box-shadow: 0 8px 32px rgba(157, 78, 221, 0.45), 0 0 0 0 rgba(255, 107, 157, 0.5);
       transition: transform 0.15s, box-shadow 0.15s;
       min-width: 200px;
       min-height: 52px;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: -50%; left: -60%;
+      width: 40%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+      transform: skewX(-20deg);
+      animation: btnShine 3s ease-in-out infinite;
+    }
+
+    @keyframes btnGlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes btnShine {
+      0%, 100% { left: -60%; }
+      50% { left: 120%; }
     }
 
     .btn:active {
       transform: scale(0.96);
-      box-shadow: 0 4px 12px var(--shadow);
+      box-shadow: 0 4px 16px var(--shadow);
     }
 
     .btn-ghost {
@@ -182,10 +384,11 @@
 
     .tap-hint {
       font-size: 0.82rem;
-      color: var(--deep);
-      opacity: 0.55;
+      color: rgba(255, 255, 255, 0.75);
+      opacity: 0.85;
       margin-top: 16px;
       animation: float 2s ease-in-out infinite;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
     .tap-zone {
@@ -264,13 +467,13 @@
 
     /* 照片区（可选） */
     .photo-frame {
-      width: 140px;
-      height: 140px;
+      position: relative;
+      width: 148px;
+      height: 148px;
       border-radius: 50%;
       overflow: hidden;
       margin: 0 auto 20px;
-      border: 4px solid rgba(255,255,255,0.9);
-      box-shadow: 0 8px 24px var(--shadow);
+      box-shadow: 0 12px 40px rgba(157, 78, 221, 0.45);
       background: linear-gradient(135deg, #ffb3c6, #ff8fab);
       display: flex;
       align-items: center;
@@ -278,10 +481,27 @@
       font-size: 3rem;
     }
 
-    .photo-frame img {
-      width: 100%;
-      height: 100%;
+    .photo-frame::before {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--pink), var(--violet), var(--gold), var(--rose), var(--pink));
+      animation: spin 4s linear infinite;
+      z-index: 0;
+    }
+
+    .photo-frame img,
+    .photo-frame .placeholder {
+      position: relative;
+      z-index: 1;
+      width: calc(100% - 10px);
+      height: calc(100% - 10px);
+      border-radius: 50%;
       object-fit: cover;
+    }
+
+    .photo-frame img {
       display: none;
     }
 
@@ -304,7 +524,53 @@
       padding: 0;
       flex-direction: column;
       justify-content: stretch;
-      background: linear-gradient(180deg, #2d1028 0%, #4a1942 35%, #6d2a5e 100%);
+      background: radial-gradient(ellipse at 50% 0%, #4a1942 0%, #1a0a14 55%, #0d0509 100%);
+    }
+
+    .polaroid {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+    }
+
+    .polaroid-tape {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 72px;
+      height: 22px;
+      background: rgba(255, 250, 220, 0.75);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 5;
+      opacity: 0.9;
+    }
+
+    .polaroid-inner {
+      background: #fffef9;
+      padding: 12px 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      max-width: min(92vw, 380px);
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      transform: rotate(-0.5deg);
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .polaroid-inner.show-pop {
+      animation: polaroidPop 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes polaroidPop {
+      0% { transform: rotate(-0.5deg) scale(0.92); opacity: 0.7; }
+      100% { transform: rotate(-0.5deg) scale(1); opacity: 1; }
     }
 
     .memory-intro {
@@ -329,40 +595,46 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: flex-end;
       padding-top: max(72px, calc(env(safe-area-inset-top) + 56px));
     }
 
     .memory-photo-wrap {
       position: relative;
       width: 100%;
+      min-height: 200px;
+      max-height: min(58vh, 520px);
       flex: 1;
-      min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px 12px;
+      overflow: hidden;
+      background: #1a1020;
+      border-radius: 2px;
     }
 
     .memory-photo-wrap img {
       display: block;
       max-width: 100%;
-      max-height: 100%;
+      max-height: min(58vh, 480px);
       width: auto;
       height: auto;
       object-fit: contain;
       object-position: center;
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
       opacity: 0;
-      transform: scale(0.98);
-      transition: opacity 0.45s ease, transform 0.6s ease;
+      transform: scale(1.04);
+      transition: opacity 0.5s ease;
     }
 
     .memory-photo-wrap.show img {
       opacity: 1;
-      transform: scale(1);
+      animation: kenBurns 10s ease-out forwards;
+    }
+
+    @keyframes kenBurns {
+      from { transform: scale(1); }
+      to { transform: scale(1.06); }
     }
 
     .memory-photo-wrap.flash img {
@@ -405,30 +677,29 @@
     .memory-flash {
       position: absolute;
       inset: 0;
-      background: #fff;
+      background: linear-gradient(135deg, #fff 0%, #ffb3c6 50%, #fff 100%);
       opacity: 0;
       pointer-events: none;
       z-index: 3;
     }
 
     .memory-flash.burst {
-      animation: memoryFlash 0.55s ease-out forwards;
+      animation: memoryFlash 0.6s ease-out forwards;
     }
 
     @keyframes memoryFlash {
       0% { opacity: 0; }
-      18% { opacity: 0.92; }
+      15% { opacity: 0.95; }
       100% { opacity: 0; }
     }
 
     .memory-caption {
       flex-shrink: 0;
       width: 100%;
-      padding: 16px 24px max(20px, env(safe-area-inset-bottom));
+      padding: 14px 20px max(18px, env(safe-area-inset-bottom));
       text-align: center;
-      background: rgba(255, 245, 247, 0.96);
-      border-radius: 20px 20px 0 0;
-      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+      background: linear-gradient(180deg, rgba(26, 10, 20, 0.92) 0%, rgba(26, 10, 20, 0.98) 100%);
+      border-top: 1px solid rgba(255, 182, 193, 0.2);
       opacity: 0;
       transform: translateY(16px);
       transition: opacity 0.4s ease 0.12s, transform 0.4s ease 0.12s;
@@ -441,24 +712,27 @@
 
     .memory-index {
       font-size: 0.78rem;
-      letter-spacing: 0.15em;
-      color: var(--deep);
-      opacity: 0.65;
+      letter-spacing: 0.2em;
+      color: rgba(255, 182, 193, 0.8);
       margin-bottom: 4px;
     }
 
     .memory-title {
       font-family: "ZCOOL KuaiLe", cursive;
-      font-size: 1.25rem;
-      color: var(--deep);
+      font-size: 1.3rem;
+      background: linear-gradient(90deg, #fff, #ffb3c6, #fff);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 5s linear infinite;
       line-height: 1.5;
       margin-bottom: 6px;
     }
 
     .memory-hint {
       font-size: 0.8rem;
-      color: var(--text);
-      opacity: 0.5;
+      color: rgba(255, 255, 255, 0.45);
       animation: float 2s ease-in-out infinite;
     }
 
@@ -497,22 +771,55 @@
     }
 
     .memory-progress span.on {
-      background: #fff;
-      transform: scale(1.3);
+      background: linear-gradient(135deg, #ff6b9d, #ffd6a5);
+      transform: scale(1.4);
+      box-shadow: 0 0 10px rgba(255, 107, 157, 0.9);
+    }
+
+    #screen-celebrate .big-heart {
+      font-size: 5rem;
+      filter: drop-shadow(0 0 30px rgba(255, 107, 157, 0.8));
+    }
+
+    #screen-celebrate .date-line {
+      color: rgba(255, 255, 255, 0.75);
+      padding: 8px 20px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .music-btn {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .music-btn.playing {
+      box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.4), 0 4px 16px var(--shadow);
+      animation: pulse 1.5s ease-in-out infinite;
     }
   </style>
 </head>
-<body>
+<body data-scene="welcome">
+  <div class="bg-layer" aria-hidden="true">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+    <div class="bg-grain"></div>
+  </div>
   <canvas id="hearts-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
 
   <button class="music-btn" id="musicBtn" type="button" aria-label="背景音乐" title="背景音乐">🎵</button>
 
   <!-- 开场 -->
   <div class="app">
     <section class="screen active" id="screen-welcome">
-      <span class="badge">5 · 2 · 0</span>
-      <div class="big-heart">💗</div>
-      <h1>有人想对你说句话</h1>
+      <span class="badge badge-glow">5 · 2 · 0</span>
+      <div class="heart-orb">
+        <div class="heart-ring"></div>
+        <div class="big-heart">💗</div>
+      </div>
+      <h1 class="title-shine">有人想对你说句话</h1>
       <p class="subtitle">轻轻点一下，慢慢听我说</p>
       <button class="btn" id="btnStart" type="button">点开看看</button>
     </section>
@@ -533,13 +840,18 @@
         <div class="memory-progress" id="memoryProgress"></div>
       </div>
       <div class="memory-stage">
-        <div class="memory-photo-wrap" id="memoryWrap">
-          <div class="memory-flash" id="memoryFlash"></div>
-          <div class="memory-loading" id="memoryLoading">
-            <div class="memory-spinner"></div>
-            <span>回忆加载中…</span>
+        <div class="polaroid">
+          <div class="polaroid-tape"></div>
+          <div class="polaroid-inner" id="polaroidInner">
+            <div class="memory-photo-wrap" id="memoryWrap">
+              <div class="memory-flash" id="memoryFlash"></div>
+              <div class="memory-loading" id="memoryLoading">
+                <div class="memory-spinner"></div>
+                <span>回忆加载中…</span>
+              </div>
+              <img id="memoryImg" src="" alt="我们的回忆" decoding="async" />
+            </div>
           </div>
-          <img id="memoryImg" src="" alt="我们的回忆" decoding="async" />
         </div>
         <div class="memory-caption">
           <p class="memory-index" id="memoryIndex"></p>
@@ -555,7 +867,7 @@
         <span class="placeholder">🌸</span>
         <img src="photo.jpg" alt="我们" />
       </div>
-      <h1>愿意做我最重要的人吗？</h1>
+      <h1 class="title-shine">愿意做我最重要的人吗？</h1>
       <p class="subtitle">不是今天才喜欢你，<br />是想把以后的每一天都给你</p>
       <div class="final-actions">
         <button class="btn btn-yes" id="btnYes" type="button">愿意 💕</button>
@@ -569,7 +881,7 @@
     <section class="screen" id="screen-celebrate">
       <div class="celebration show">
         <div class="big-heart">💖</div>
-        <h1>谢谢你，我的宝贝</h1>
+        <h1 class="title-shine">谢谢你，我的宝贝</h1>
         <p class="subtitle">从今天起，520 不只是日期，<br />是我们一起过的每一天。</p>
         <p class="date-line" id="dateLine"></p>
       </div>
@@ -654,9 +966,23 @@
       ctx.restore();
     }
 
+    const sparkles = [];
+
+    function spawnSparkle() {
+      sparkles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 1 + Math.random() * 2,
+        a: 0.3 + Math.random() * 0.7,
+        tw: Math.random() * Math.PI * 2
+      });
+      if (sparkles.length > 60) sparkles.shift();
+    }
+
     function animateHearts() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (Math.random() < 0.08) spawnHeart();
+      if (Math.random() < 0.1) spawnHeart();
+      if (Math.random() < 0.06) spawnSparkle();
       for (let i = hearts.length - 1; i >= 0; i--) {
         const h = hearts[i];
         h.y -= h.speed;
@@ -665,6 +991,14 @@
         drawHeart(h.x, h.y, h.size, h.color, h.rot);
         if (h.y < -30) hearts.splice(i, 1);
       }
+      sparkles.forEach((s) => {
+        s.tw += 0.08;
+        const a = s.a * (0.5 + 0.5 * Math.sin(s.tw));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
+        ctx.fill();
+      });
       requestAnimationFrame(animateHearts);
     }
 
@@ -672,9 +1006,88 @@
     window.addEventListener("resize", resizeCanvas);
     animateHearts();
 
+    const confettiCanvas = $("confetti-canvas");
+    const cctx = confettiCanvas.getContext("2d");
+    const confetti = [];
+
+    function resizeConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    resizeConfetti();
+    window.addEventListener("resize", resizeConfetti);
+
+    function burstConfetti(count = 120) {
+      const palette = ["#ff6b9d", "#ff8fab", "#ffd6a5", "#9d4edd", "#fff", "#c9184a"];
+      for (let i = 0; i < count; i++) {
+        confetti.push({
+          x: confettiCanvas.width * 0.5 + (Math.random() - 0.5) * 120,
+          y: confettiCanvas.height * 0.42,
+          vx: (Math.random() - 0.5) * 14,
+          vy: -6 - Math.random() * 12,
+          w: 6 + Math.random() * 8,
+          h: 4 + Math.random() * 6,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.3,
+          color: palette[Math.floor(Math.random() * palette.length)],
+          shape: Math.random() > 0.5 ? "rect" : "heart"
+        });
+      }
+    }
+
+    function animateConfetti() {
+      cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      for (let i = confetti.length - 1; i >= 0; i--) {
+        const p = confetti[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35;
+        p.rot += p.vr;
+        cctx.save();
+        cctx.translate(p.x, p.y);
+        cctx.rotate(p.rot);
+        cctx.fillStyle = p.color;
+        if (p.shape === "heart") {
+          const s = p.w / 3;
+          cctx.beginPath();
+          cctx.moveTo(0, -s * 0.3);
+          cctx.bezierCurveTo(0, -s, -s, -s, -s, 0);
+          cctx.bezierCurveTo(-s, s * 0.5, 0, s, 0, s * 1.2);
+          cctx.bezierCurveTo(0, s, s, s * 0.5, s, 0);
+          cctx.bezierCurveTo(s, -s, 0, -s, 0, -s * 0.3);
+          cctx.fill();
+        } else {
+          cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        }
+        cctx.restore();
+        if (p.y > confettiCanvas.height + 40) confetti.splice(i, 1);
+      }
+      requestAnimationFrame(animateConfetti);
+    }
+    animateConfetti();
+
     function showScreen(id) {
       document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
       $(id).classList.add("active");
+      document.body.dataset.scene = id.replace("screen-", "");
+    }
+
+    let typeTimer = null;
+
+    function typeMessage(text, el) {
+      if (typeTimer) clearTimeout(typeTimer);
+      el.textContent = "";
+      el.classList.add("typing");
+      let i = 0;
+      const tick = () => {
+        if (i < text.length) {
+          el.textContent += text[i++];
+          typeTimer = setTimeout(tick, 42);
+        } else {
+          el.classList.remove("typing");
+        }
+      };
+      tick();
     }
 
     function buildDots() {
@@ -694,7 +1107,7 @@
     }
 
     function showMessage() {
-      $("messageText").textContent = MESSAGES[step];
+      typeMessage(MESSAGES[step], $("messageText"));
       updateDots();
       $("tapHint").style.opacity = step < MESSAGES.length - 1 ? "0.55" : "1";
       if (step === MESSAGES.length - 1) {
@@ -784,6 +1197,10 @@
         }
         wrap.classList.remove("loading", "flash");
         wrap.classList.add("show");
+        const polaroid = $("polaroidInner");
+        polaroid.classList.remove("show-pop");
+        void polaroid.offsetWidth;
+        polaroid.classList.add("show-pop");
       } catch {
         wrap.classList.remove("loading", "flash");
         img.src = m.img;
@@ -855,17 +1272,12 @@
     });
 
     $("btnYes").addEventListener("click", () => {
-      confettiBurst();
+      burstConfetti(160);
+      for (let i = 0; i < 50; i++) setTimeout(spawnHeart, i * 35);
       showScreen("screen-celebrate");
       const d = new Date();
       $("dateLine").textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 · 我们的 520`;
     });
-
-    function confettiBurst() {
-      for (let i = 0; i < 40; i++) {
-        setTimeout(spawnHeart, i * 40);
-      }
-    }
 
     // 背景音乐（需用户点击开启，兼容手机）
     const bgm = $("bgm");
@@ -877,10 +1289,12 @@
           await bgm.play();
           musicOn = true;
           musicBtn.textContent = "🔊";
+          musicBtn.classList.add("playing");
         } else {
           bgm.pause();
           musicOn = false;
           musicBtn.textContent = "🎵";
+          musicBtn.classList.remove("playing");
         }
       } catch {
         musicBtn.textContent = "🎵";
