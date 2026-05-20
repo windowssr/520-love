@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#ff6b9d" />
   <title>520 · 给你</title>
+  <link rel="preload" as="image" href="1.jpg" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet" />
@@ -369,6 +370,38 @@
       transform: scale(1.02);
     }
 
+    .memory-loading {
+      position: absolute;
+      z-index: 2;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.85rem;
+    }
+
+    .memory-photo-wrap.loading .memory-loading {
+      display: flex;
+    }
+
+    .memory-photo-wrap.loading img {
+      opacity: 0.15;
+    }
+
+    .memory-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .memory-flash {
       position: absolute;
       inset: 0;
@@ -502,7 +535,11 @@
       <div class="memory-stage">
         <div class="memory-photo-wrap" id="memoryWrap">
           <div class="memory-flash" id="memoryFlash"></div>
-          <img id="memoryImg" src="" alt="我们的回忆" />
+          <div class="memory-loading" id="memoryLoading">
+            <div class="memory-spinner"></div>
+            <span>回忆加载中…</span>
+          </div>
+          <img id="memoryImg" src="" alt="我们的回忆" decoding="async" />
         </div>
         <div class="memory-caption">
           <p class="memory-index" id="memoryIndex"></p>
@@ -689,7 +726,36 @@
       $("memoryIndex").textContent = `${memoryStep + 1} / ${MEMORIES.length}`;
     }
 
-    function showMemory(index, withFlash = true) {
+    const imageCache = new Map();
+
+    function loadImage(src) {
+      if (imageCache.has(src)) return imageCache.get(src);
+      const p = new Promise((resolve, reject) => {
+        const im = new Image();
+        im.decoding = "async";
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = src;
+      });
+      imageCache.set(src, p);
+      return p;
+    }
+
+    function preloadAhead(fromIndex) {
+      for (let i = fromIndex; i < Math.min(fromIndex + 3, MEMORIES.length); i++) {
+        loadImage(MEMORIES[i].img).catch(() => {});
+      }
+    }
+
+    function preloadAllMemories() {
+      let chain = Promise.resolve();
+      MEMORIES.forEach((m) => {
+        chain = chain.then(() => loadImage(m.img)).catch(() => {});
+      });
+      return chain;
+    }
+
+    async function showMemory(index, withFlash = true) {
       const m = MEMORIES[index];
       const wrap = $("memoryWrap");
       const img = $("memoryImg");
@@ -697,6 +763,7 @@
 
       $("memoryTitle").textContent = m.title;
       updateMemoryProgress();
+      preloadAhead(index + 1);
 
       if (withFlash) {
         wrap.classList.remove("show");
@@ -704,22 +771,23 @@
         flash.classList.remove("burst");
         void flash.offsetWidth;
         flash.classList.add("burst");
+      } else {
+        wrap.classList.remove("show");
       }
 
-      const onReady = () => {
-        img.src = m.img;
-        requestAnimationFrame(() => {
-          wrap.classList.remove("flash");
-          wrap.classList.add("show");
-        });
-      };
+      wrap.classList.add("loading");
 
-      if (img.complete && img.src.endsWith(m.img)) {
-        onReady();
-      } else {
-        img.onload = () => { img.onload = null; onReady(); };
-        img.onerror = () => { img.onload = null; onReady(); };
+      try {
+        await loadImage(m.img);
+        if (!img.src.endsWith(m.img)) {
+          img.src = m.img;
+        }
+        wrap.classList.remove("loading", "flash");
+        wrap.classList.add("show");
+      } catch {
+        wrap.classList.remove("loading", "flash");
         img.src = m.img;
+        wrap.classList.add("show");
       }
 
       $("memoryHint").textContent =
@@ -750,21 +818,16 @@
       showScreen("screen-ask");
     }
 
-    function preloadMemories() {
-      MEMORIES.forEach((m) => {
-        const i = new Image();
-        i.src = m.img;
-      });
-    }
-
     $("btnStart").addEventListener("click", () => {
       step = 0;
       buildDots();
       showMessage();
       showScreen("screen-messages");
       $("tapZone").classList.add("on");
-      preloadMemories();
+      preloadAhead(0);
     });
+
+    preloadAhead(0);
 
     $("tapZone").addEventListener("click", () => {
       if ($("screen-memories").classList.contains("active")) {
