@@ -800,6 +800,21 @@
 
     #hero-heart-canvas.active {
       opacity: 1;
+      pointer-events: auto;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #hero-heart-canvas.active:active {
+      cursor: grabbing;
+    }
+
+    .heart-interact-hint {
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.45);
+      margin-bottom: 10px;
+      letter-spacing: 0.08em;
+      animation: float 2.5s ease-in-out infinite;
     }
 
     #screen-celebrate .celebration {
@@ -914,6 +929,7 @@
       <canvas id="hero-heart-canvas" aria-hidden="true"></canvas>
       <div class="celebration show">
         <div class="big-heart">💖</div>
+        <p class="heart-interact-hint" id="heartInteractHint">拖动旋转爱心 · 点击让它跳一下</p>
         <h1 class="title-shine">谢谢你，我的宝贝</h1>
         <p class="subtitle">从今天起，520 不只是日期，<br />是我们一起过的每一天。</p>
         <p class="date-line" id="dateLine"></p>
@@ -1310,13 +1326,26 @@
       btnNo.textContent = ["真的不再想想？", "我会对你很好的", "点错了吧？😊", "就点愿意嘛"][Math.floor(Math.random() * 4)];
     });
 
-    // 立体粒子爱心（庆祝页中央）
+    // 立体粒子爱心（庆祝页中央，可交互）
     const heroCanvas = $("hero-heart-canvas");
     const hctx = heroCanvas.getContext("2d");
     const heartParticles = [];
     let heroAnimId = null;
     let heroStartTime = 0;
     const HERO_COUNT = 900;
+    const heroCtrl = {
+      rotY: 0,
+      rotX: 0.35,
+      autoSpin: true,
+      bump: 0,
+      velY: 0,
+      velX: 0,
+      dragging: false,
+      moved: 0,
+      lastX: 0,
+      lastY: 0,
+      lastInteract: 0
+    };
 
     function buildHeartParticles() {
       heartParticles.length = 0;
@@ -1373,9 +1402,25 @@
       const enter = Math.min(1, elapsed / 1.2);
       const ease = 1 - Math.pow(1 - enter, 3);
       const pulse = 1 + 0.07 * Math.sin(elapsed * 2.8);
-      const baseScale = (Math.min(w, h) / 42) * ease * pulse;
-      const rotY = elapsed * 0.9;
-      const rotX = 0.35 + Math.sin(elapsed * 1.1) * 0.12;
+      heroCtrl.bump *= 0.88;
+      const bumpMul = 1 + heroCtrl.bump;
+      const baseScale = (Math.min(w, h) / 42) * ease * pulse * bumpMul;
+
+      if (heroCtrl.autoSpin && !heroCtrl.dragging) {
+        heroCtrl.rotY += 0.016;
+        heroCtrl.rotX = 0.35 + Math.sin(elapsed * 1.1) * 0.12;
+      } else if (!heroCtrl.dragging) {
+        heroCtrl.rotY += heroCtrl.velY;
+        heroCtrl.rotX += heroCtrl.velX;
+        heroCtrl.velY *= 0.94;
+        heroCtrl.velX *= 0.94;
+        if (performance.now() - heroCtrl.lastInteract > 2800 &&
+            Math.abs(heroCtrl.velY) < 0.003 && Math.abs(heroCtrl.velX) < 0.003) {
+          heroCtrl.autoSpin = true;
+        }
+      }
+      const rotY = heroCtrl.rotY;
+      const rotX = heroCtrl.rotX;
 
       hctx.clearRect(0, 0, w, h);
 
@@ -1422,8 +1467,73 @@
       heroAnimId = requestAnimationFrame(drawHeroHeart);
     }
 
+    function heroPointerPos(e) {
+      const rect = heroCanvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    function onHeartTap() {
+      heroCtrl.bump = Math.min(heroCtrl.bump + 0.42, 0.6);
+      heroCtrl.lastInteract = performance.now();
+      burstConfetti(35);
+      for (let i = 0; i < 15; i++) setTimeout(spawnHeart, i * 30);
+      heartParticles.forEach((p) => {
+        p.bx *= 1.04;
+        p.by *= 1.04;
+        p.bz *= 1.06;
+      });
+      setTimeout(() => buildHeartParticles(), 380);
+    }
+
+    heroCanvas.addEventListener("pointerdown", (e) => {
+      if (!heroCanvas.classList.contains("active")) return;
+      heroCanvas.setPointerCapture(e.pointerId);
+      heroCtrl.dragging = true;
+      heroCtrl.autoSpin = false;
+      heroCtrl.moved = 0;
+      heroCtrl.velY = 0;
+      heroCtrl.velX = 0;
+      const p = heroPointerPos(e);
+      heroCtrl.lastX = p.x;
+      heroCtrl.lastY = p.y;
+      heroCtrl.lastInteract = performance.now();
+    });
+
+    heroCanvas.addEventListener("pointermove", (e) => {
+      if (!heroCtrl.dragging) return;
+      const p = heroPointerPos(e);
+      const dx = p.x - heroCtrl.lastX;
+      const dy = p.y - heroCtrl.lastY;
+      heroCtrl.moved += Math.abs(dx) + Math.abs(dy);
+      heroCtrl.rotY += dx * 0.014;
+      heroCtrl.rotX = Math.max(-0.6, Math.min(1.1, heroCtrl.rotX + dy * 0.012));
+      heroCtrl.velY = dx * 0.014;
+      heroCtrl.velX = dy * 0.012;
+      heroCtrl.lastX = p.x;
+      heroCtrl.lastY = p.y;
+      heroCtrl.lastInteract = performance.now();
+    });
+
+    function endHeartPointer(e) {
+      if (!heroCtrl.dragging) return;
+      try { heroCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      heroCtrl.dragging = false;
+      if (heroCtrl.moved < 14) onHeartTap();
+      heroCtrl.lastInteract = performance.now();
+    }
+
+    heroCanvas.addEventListener("pointerup", endHeartPointer);
+    heroCanvas.addEventListener("pointercancel", endHeartPointer);
+
     function startHeroHeart() {
       buildHeartParticles();
+      heroCtrl.rotY = 0;
+      heroCtrl.rotX = 0.35;
+      heroCtrl.autoSpin = true;
+      heroCtrl.bump = 0;
+      heroCtrl.velY = 0;
+      heroCtrl.velX = 0;
+      heroCtrl.dragging = false;
       resizeHeroCanvas();
       heroStartTime = 0;
       heroCanvas.classList.add("active");
