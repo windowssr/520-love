@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ff6b9d" />
+  <title>520 · 给你</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink: #ff6b9d;
+      --rose: #ff8fab;
+      --deep: #c9184a;
+      --cream: #fff5f7;
+      --text: #4a1942;
+      --shadow: rgba(201, 24, 74, 0.25);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+      background: linear-gradient(160deg, #ffeef3 0%, #ffd6e0 40%, #ffb3c6 100%);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    #hearts-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: max(20px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
+      text-align: center;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 400px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .screen.active { display: flex; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .badge {
+      font-family: "ZCOOL KuaiLe", cursive;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      color: var(--deep);
+      opacity: 0.75;
+      margin-bottom: 12px;
+    }
+
+    .big-heart {
+      font-size: 4.5rem;
+      line-height: 1;
+      animation: pulse 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 8px 20px var(--shadow));
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: "ZCOOL KuaiLe", cursive;
+      font-size: clamp(1.6rem, 6vw, 2rem);
+      font-weight: 400;
+      color: var(--deep);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--text);
+      opacity: 0.85;
+      margin-bottom: 32px;
+      min-height: 3.6em;
+    }
+
+    .message-card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 12px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+      margin-bottom: 28px;
+      width: 100%;
+    }
+
+    .message-card p {
+      font-size: 1.05rem;
+      line-height: 2;
+      letter-spacing: 0.05em;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .progress-dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(201, 24, 74, 0.2);
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .progress-dots span.on {
+      background: var(--deep);
+      transform: scale(1.25);
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-family: "ZCOOL KuaiLe", cursive;
+      font-size: 1.1rem;
+      padding: 16px 40px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--pink), var(--deep));
+      color: #fff;
+      box-shadow: 0 8px 24px var(--shadow);
+      transition: transform 0.15s, box-shadow 0.15s;
+      min-width: 200px;
+      min-height: 52px;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--deep);
+      box-shadow: none;
+      font-size: 0.9rem;
+      padding: 10px;
+      min-width: auto;
+      opacity: 0.6;
+    }
+
+    .tap-hint {
+      font-size: 0.82rem;
+      color: var(--deep);
+      opacity: 0.55;
+      margin-top: 16px;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    .tap-zone {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: none;
+    }
+
+    .tap-zone.on { display: block; }
+
+    /* 最终页 */
+    .final-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .btn-yes {
+      font-size: 1.25rem;
+      padding: 18px 48px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .btn-no-wrap {
+      position: relative;
+      height: 48px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-no {
+      position: absolute;
+      background: rgba(255,255,255,0.6);
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 12px 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transition: left 0.2s, top 0.2s;
+    }
+
+    .celebration {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .celebration.show { display: flex; }
+
+    .celebration h1 { font-size: 1.8rem; margin-bottom: 16px; }
+
+    .date-line {
+      font-size: 0.95rem;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+
+    .music-btn {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      right: 16px;
+      z-index: 10;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(8px);
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    /* 照片区（可选） */
+    .photo-frame {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 20px;
+      border: 4px solid rgba(255,255,255,0.9);
+      box-shadow: 0 8px 24px var(--shadow);
+      background: linear-gradient(135deg, #ffb3c6, #ff8fab);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    .photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .photo-frame.has-img img { display: block; }
+    .photo-frame.has-img .placeholder { display: none; }
+
+    /* 记忆闪回 */
+    #screen-memories {
+      max-width: 100%;
+      padding: 0;
+    }
+
+    #screen-memories.active {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      max-width: none;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      flex-direction: column;
+      justify-content: stretch;
+      background: linear-gradient(180deg, #2d1028 0%, #4a1942 35%, #6d2a5e 100%);
+    }
+
+    .memory-intro {
+      font-family: "ZCOOL KuaiLe", cursive;
+      font-size: 1.35rem;
+      color: var(--deep);
+      margin-bottom: 8px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.2s ease both;
+    }
+
+    #screen-memories.active .memory-stage {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+    }
+
+    .memory-stage {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: max(72px, calc(env(safe-area-inset-top) + 56px));
+    }
+
+    .memory-photo-wrap {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+    }
+
+    .memory-photo-wrap img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      transform: scale(0.98);
+      transition: opacity 0.45s ease, transform 0.6s ease;
+    }
+
+    .memory-photo-wrap.show img {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .memory-photo-wrap.flash img {
+      opacity: 0;
+      transform: scale(1.02);
+    }
+
+    .memory-flash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .memory-flash.burst {
+      animation: memoryFlash 0.55s ease-out forwards;
+    }
+
+    @keyframes memoryFlash {
+      0% { opacity: 0; }
+      18% { opacity: 0.92; }
+      100% { opacity: 0; }
+    }
+
+    .memory-caption {
+      flex-shrink: 0;
+      width: 100%;
+      padding: 16px 24px max(20px, env(safe-area-inset-bottom));
+      text-align: center;
+      background: rgba(255, 245, 247, 0.96);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.4s ease 0.12s, transform 0.4s ease 0.12s;
+    }
+
+    .memory-photo-wrap.show + .memory-caption {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .memory-index {
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      color: var(--deep);
+      opacity: 0.65;
+      margin-bottom: 4px;
+    }
+
+    .memory-title {
+      font-family: "ZCOOL KuaiLe", cursive;
+      font-size: 1.25rem;
+      color: var(--deep);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+
+    .memory-hint {
+      font-size: 0.8rem;
+      color: var(--text);
+      opacity: 0.5;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    #screen-memories .memory-top {
+      position: absolute;
+      top: max(16px, env(safe-area-inset-top));
+      left: 0;
+      right: 0;
+      z-index: 6;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #screen-memories .memory-top .badge {
+      color: #fff;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.4);
+      margin-bottom: 0;
+    }
+
+    .memory-progress {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      padding: 0 20px;
+      flex-wrap: wrap;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+    .memory-progress span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      transition: background 0.3s, transform 0.3s;
+    }
+
+    .memory-progress span.on {
+      background: #fff;
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hearts-canvas"></canvas>
+
+  <button class="music-btn" id="musicBtn" type="button" aria-label="背景音乐" title="背景音乐">🎵</button>
+
+  <!-- 开场 -->
+  <div class="app">
+    <section class="screen active" id="screen-welcome">
+      <span class="badge">5 · 2 · 0</span>
+      <div class="big-heart">💗</div>
+      <h1>有人想对你说句话</h1>
+      <p class="subtitle">轻轻点一下，慢慢听我说</p>
+      <button class="btn" id="btnStart" type="button">点开看看</button>
+    </section>
+
+    <!-- 情话步骤 -->
+    <section class="screen" id="screen-messages">
+      <div class="progress-dots" id="progressDots"></div>
+      <div class="message-card">
+        <p id="messageText"></p>
+      </div>
+      <p class="tap-hint" id="tapHint">点击屏幕继续 ♡</p>
+    </section>
+
+    <!-- 记忆闪回 -->
+    <section class="screen" id="screen-memories">
+      <div class="memory-top">
+        <span class="badge" id="memoryBadge">记忆闪回</span>
+        <div class="memory-progress" id="memoryProgress"></div>
+      </div>
+      <div class="memory-stage">
+        <div class="memory-photo-wrap" id="memoryWrap">
+          <div class="memory-flash" id="memoryFlash"></div>
+          <img id="memoryImg" src="" alt="我们的回忆" />
+        </div>
+        <div class="memory-caption">
+          <p class="memory-index" id="memoryIndex"></p>
+          <p class="memory-title" id="memoryTitle"></p>
+          <p class="memory-hint" id="memoryHint">轻触继续，重温这一刻 ♡</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 表白 -->
+    <section class="screen" id="screen-ask">
+      <div class="photo-frame has-img" id="photoFrame">
+        <span class="placeholder">🌸</span>
+        <img src="photo.jpg" alt="我们" />
+      </div>
+      <h1>愿意做我最重要的人吗？</h1>
+      <p class="subtitle">不是今天才喜欢你，<br />是想把以后的每一天都给你</p>
+      <div class="final-actions">
+        <button class="btn btn-yes" id="btnYes" type="button">愿意 💕</button>
+        <div class="btn-no-wrap">
+          <button class="btn btn-no" id="btnNo" type="button">再想想…</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 成功 -->
+    <section class="screen" id="screen-celebrate">
+      <div class="celebration show">
+        <div class="big-heart">💖</div>
+        <h1>谢谢你，我的宝贝</h1>
+        <p class="subtitle">从今天起，520 不只是日期，<br />是我们一起过的每一天。</p>
+        <p class="date-line" id="dateLine"></p>
+      </div>
+    </section>
+  </div>
+
+  <div class="tap-zone" id="tapZone"></div>
+
+  <audio id="bgm" loop preload="auto">
+    <!-- 可替换为本地 music.mp3，或删除此 audio 仅用按钮提示 -->
+    <source src="music.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    // ========== 在这里改情话（按顺序点击出现）==========
+    const MESSAGES = [
+      "遇见你之前，我觉得日子普普通通。",
+      "遇见你之后，连发呆都会想起你笑的样子。",
+      "想陪你吃很多顿饭，走很多条路，说很多句废话。",
+      "你不需要多完美，在我这里，你已经是最好的答案。",
+      "520 想正式告诉你——我喜欢你，很喜欢，只喜欢你。"
+    ];
+
+    // ========== 记忆闪回（按时间顺序点击浏览）==========
+    const MEMORIES = [
+      { img: "1.jpg", title: "第一次在海边见面" },
+      { img: "2.jpg", title: "线上聊天" },
+      { img: "3.jpg", title: "确定关系后，正式见面" },
+      { img: "4.jpg", title: "第一次送花" },
+      { img: "5.jpg", title: "第一次在你学校散步" },
+      { img: "6.jpg", title: "恋爱 100 天" },
+      { img: "7.jpg", title: "威海海边，一起看海" },
+      { img: "8.jpg", title: "见家长" },
+      { img: "9.jpg", title: "一起去海洋馆" },
+      { img: "10.jpg", title: "给你过生日" },
+      { img: "11.jpg", title: "一起去看花" }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    let step = 0;
+    let memoryStep = 0;
+    let musicOn = false;
+    let memoryTransitioning = false;
+
+    // 飘心背景
+    const canvas = $("hearts-canvas");
+    const ctx = canvas.getContext("2d");
+    const hearts = [];
+    const colors = ["#ff6b9d", "#ff8fab", "#ffb3c6", "#c9184a", "#ffccd5"];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function spawnHeart() {
+      hearts.push({
+        x: Math.random() * canvas.width,
+        y: canvas.height + 20,
+        size: 6 + Math.random() * 14,
+        speed: 0.4 + Math.random() * 1.2,
+        drift: (Math.random() - 0.5) * 0.6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.04
+      });
+    }
+
+    function drawHeart(x, y, size, color, rot) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      const s = size / 2;
+      ctx.moveTo(0, -s * 0.3);
+      ctx.bezierCurveTo(0, -s, -s, -s, -s, 0);
+      ctx.bezierCurveTo(-s, s * 0.6, 0, s * 1.1, 0, s * 1.4);
+      ctx.bezierCurveTo(0, s * 1.1, s, s * 0.6, s, 0);
+      ctx.bezierCurveTo(s, -s, 0, -s, 0, -s * 0.3);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function animateHearts() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (Math.random() < 0.08) spawnHeart();
+      for (let i = hearts.length - 1; i >= 0; i--) {
+        const h = hearts[i];
+        h.y -= h.speed;
+        h.x += h.drift;
+        h.rot += h.rotSpeed;
+        drawHeart(h.x, h.y, h.size, h.color, h.rot);
+        if (h.y < -30) hearts.splice(i, 1);
+      }
+      requestAnimationFrame(animateHearts);
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    animateHearts();
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
+      $(id).classList.add("active");
+    }
+
+    function buildDots() {
+      const wrap = $("progressDots");
+      wrap.innerHTML = "";
+      MESSAGES.forEach((_, i) => {
+        const dot = document.createElement("span");
+        dot.dataset.i = i;
+        wrap.appendChild(dot);
+      });
+    }
+
+    function updateDots() {
+      $("progressDots").querySelectorAll("span").forEach((dot, i) => {
+        dot.classList.toggle("on", i === step);
+      });
+    }
+
+    function showMessage() {
+      $("messageText").textContent = MESSAGES[step];
+      updateDots();
+      $("tapHint").style.opacity = step < MESSAGES.length - 1 ? "0.55" : "1";
+      if (step === MESSAGES.length - 1) {
+        $("tapHint").textContent = "再点一下，看看我们的回忆 ♡";
+      }
+    }
+
+    function nextMessage() {
+      if (step < MESSAGES.length - 1) {
+        step++;
+        showMessage();
+        return;
+      }
+      startMemories();
+    }
+
+    function buildMemoryProgress() {
+      const wrap = $("memoryProgress");
+      wrap.innerHTML = "";
+      MEMORIES.forEach((_, i) => {
+        wrap.appendChild(document.createElement("span"));
+      });
+    }
+
+    function updateMemoryProgress() {
+      $("memoryProgress").querySelectorAll("span").forEach((dot, i) => {
+        dot.classList.toggle("on", i === memoryStep);
+      });
+      $("memoryIndex").textContent = `${memoryStep + 1} / ${MEMORIES.length}`;
+    }
+
+    function showMemory(index, withFlash = true) {
+      const m = MEMORIES[index];
+      const wrap = $("memoryWrap");
+      const img = $("memoryImg");
+      const flash = $("memoryFlash");
+
+      $("memoryTitle").textContent = m.title;
+      updateMemoryProgress();
+
+      if (withFlash) {
+        wrap.classList.remove("show");
+        wrap.classList.add("flash");
+        flash.classList.remove("burst");
+        void flash.offsetWidth;
+        flash.classList.add("burst");
+      }
+
+      const onReady = () => {
+        img.src = m.img;
+        requestAnimationFrame(() => {
+          wrap.classList.remove("flash");
+          wrap.classList.add("show");
+        });
+      };
+
+      if (img.complete && img.src.endsWith(m.img)) {
+        onReady();
+      } else {
+        img.onload = () => { img.onload = null; onReady(); };
+        img.onerror = () => { img.onload = null; onReady(); };
+        img.src = m.img;
+      }
+
+      $("memoryHint").textContent =
+        index < MEMORIES.length - 1
+          ? "轻触继续，下一帧回忆 ♡"
+          : "最后一帧了，轻触我有话问你 ♡";
+    }
+
+    function startMemories() {
+      memoryStep = 0;
+      memoryTransitioning = false;
+      buildMemoryProgress();
+      showScreen("screen-memories");
+      showMemory(0, false);
+      $("tapZone").classList.add("on");
+    }
+
+    function nextMemory() {
+      if (memoryTransitioning) return;
+      if (memoryStep < MEMORIES.length - 1) {
+        memoryTransitioning = true;
+        memoryStep++;
+        showMemory(memoryStep);
+        setTimeout(() => { memoryTransitioning = false; }, 520);
+        return;
+      }
+      $("tapZone").classList.remove("on");
+      showScreen("screen-ask");
+    }
+
+    function preloadMemories() {
+      MEMORIES.forEach((m) => {
+        const i = new Image();
+        i.src = m.img;
+      });
+    }
+
+    $("btnStart").addEventListener("click", () => {
+      step = 0;
+      buildDots();
+      showMessage();
+      showScreen("screen-messages");
+      $("tapZone").classList.add("on");
+      preloadMemories();
+    });
+
+    $("tapZone").addEventListener("click", () => {
+      if ($("screen-memories").classList.contains("active")) {
+        nextMemory();
+      } else if ($("screen-messages").classList.contains("active")) {
+        nextMessage();
+      }
+    });
+
+    // 「再想想」按钮躲开
+    const btnNo = $("btnNo");
+    const wrap = btnNo.parentElement;
+
+    function moveNoButton() {
+      const maxX = wrap.clientWidth - btnNo.offsetWidth;
+      const maxY = 80;
+      btnNo.style.left = Math.random() * Math.max(0, maxX) + "px";
+      btnNo.style.top = Math.random() * maxY + "px";
+    }
+
+    btnNo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      moveNoButton();
+      btnNo.textContent = ["真的不再想想？", "我会对你很好的", "点错了吧？😊", "就点愿意嘛"][Math.floor(Math.random() * 4)];
+    });
+
+    $("btnYes").addEventListener("click", () => {
+      confettiBurst();
+      showScreen("screen-celebrate");
+      const d = new Date();
+      $("dateLine").textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 · 我们的 520`;
+    });
+
+    function confettiBurst() {
+      for (let i = 0; i < 40; i++) {
+        setTimeout(spawnHeart, i * 40);
+      }
+    }
+
+    // 背景音乐（需用户点击开启，兼容手机）
+    const bgm = $("bgm");
+    const musicBtn = $("musicBtn");
+
+    musicBtn.addEventListener("click", async () => {
+      try {
+        if (!musicOn) {
+          await bgm.play();
+          musicOn = true;
+          musicBtn.textContent = "🔊";
+        } else {
+          bgm.pause();
+          musicOn = false;
+          musicBtn.textContent = "🎵";
+        }
+      } catch {
+        musicBtn.textContent = "🎵";
+        alert("把 music.mp3 放在同目录，或忽略音乐按钮即可～");
+      }
+    });
+  </script>
+</body>
+</html>
